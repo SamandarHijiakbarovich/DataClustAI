@@ -1,0 +1,100 @@
+@model ExcelAiCategorizer.Models.UploadViewModel
+@{
+    ViewData["Title"] = "Excel faylni AI bilan kategoriyalash";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+
+        <div class="text-center mb-4">
+            <h1 class="h3 mb-2">Excel faylni sun'iy intellekt bilan kategoriyalash</h1>
+            <p class="text-muted mb-0">
+                .xlsx faylni yuklang — har bir qator tahlil qilinib, kategoriyasi,
+                ishonch darajasi va izohi bilan yangi fayl qaytariladi.
+            </p>
+        </div>
+
+        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+        <form asp-action="Start" method="post" enctype="multipart/form-data" class="card shadow-sm">
+            <div class="card-body p-4">
+
+                <div class="mb-4">
+                    <label asp-for="File" class="form-label fw-semibold"></label>
+                    <input asp-for="File" type="file" accept=".xlsx" class="form-control" />
+                    <div class="form-text">
+                        Birinchi qator ustun sarlavhalari deb qabul qilinadi. Maksimal 20 000 qator.
+                    </div>
+                    <span asp-validation-for="File" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="ColumnName" class="form-label fw-semibold"></label>
+                    <input asp-for="ColumnName" class="form-control"
+                           placeholder="Masalan: Izoh   yoki   Qiziqish, Yo'nalish, Motivatsiya   yoki   *" />
+                    <div class="form-text">
+                        Bu yerga <strong>ustun nomini</strong> yozing (buyruq emas). Uch xil ishlatish mumkin:
+                        <ul class="mb-0 mt-1">
+                            <li><strong>Bo'sh qoldiring</strong> — matnga eng boy ustun avtomatik tanlanadi</li>
+                            <li><strong>Bir nechta nom</strong>, vergul bilan — ular birlashtirilib tahlil qilinadi</li>
+                            <li><strong><code>*</code></strong> yoki <code>barcha</code> — to'ldirilgan hamma ustun</li>
+                        </ul>
+                        <div class="mt-2 text-warning-emphasis">
+                            <strong>Diqqat:</strong> faqat tanlangan ustunlar AI ga yuboriladi.
+                            <code>*</code> yozsangiz, ism, telefon, manzil kabi shaxsiy ma'lumotlar ham
+                            yuboriladi — kerakli ustunlarnigina tanlang.
+                        </div>
+                    </div>
+                    <span asp-validation-for="ColumnName" class="text-danger small"></span>
+                </div>
+
+                <div class="mb-3">
+                    <label asp-for="CategoriesRaw" class="form-label fw-semibold"></label>
+                    <textarea asp-for="CategoriesRaw" rows="5" class="form-control"
+                              placeholder="Shikoyat&#10;Taklif&#10;Maqtov&#10;Texnik muammo"></textarea>
+                    <div class="form-text">
+                        Bo'sh qoldirsangiz, AI kategoriyalarni ma'lumotning o'zidan aniqlaydi.
+                    </div>
+                    <span asp-validation-for="CategoriesRaw" class="text-danger small"></span>
+                </div>
+
+                <div class="form-check mb-4">
+                    <input asp-for="AllowNewCategories" class="form-check-input" />
+                    <label asp-for="AllowNewCategories" class="form-check-label"></label>
+                    <div class="form-text">
+                        Belgilanmasa, model faqat siz kiritgan kategoriyalardan foydalanadi
+                        (JSON sxemasidagi <code>enum</code> orqali majburlanadi).
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <label asp-for="Context" class="form-label fw-semibold"></label>
+                    <input asp-for="Context" class="form-control"
+                           placeholder="Masalan: onlayn do'kon mijozlarining izohlari" />
+                    <div class="form-text">
+                        Qisqa kontekst modelning aniqligini sezilarli oshiradi.
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    Tahlilni boshlash
+                </button>
+            </div>
+        </form>
+
+        <div class="card mt-4 border-0 bg-light">
+            <div class="card-body small text-muted">
+                <strong>Qanday ishlaydi:</strong>
+                fayl o'qiladi → qatorlar 25 tadan to'dalarga bo'linadi →
+                to'dalar parallel ravishda Claude modeliga yuboriladi →
+                javob JSON sxemasi bilan tekshiriladi →
+                natija yangi <code>.xlsx</code> faylga (natija + xulosa varaqlari) yoziladi.
+            </div>
+        </div>
+
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

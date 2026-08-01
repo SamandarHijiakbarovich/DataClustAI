@@ -1,0 +1,164 @@
+@model ExcelAiCategorizer.Models.CategorizationJob
+@{
+    ViewData["Title"] = "Tahlil jarayoni";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-8" data-job-id="@Model.Id" id="job">
+
+        <h1 class="h4 mb-1">Tahlil jarayoni</h1>
+        <p class="text-muted">
+            Fayl: <strong>@Model.FileName</strong>
+        </p>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+
+                <div class="d-flex justify-content-between align-items-center mb-2">
+                    <span id="status-label" class="badge bg-secondary">Kutilmoqda</span>
+                    <span id="counter" class="small text-muted">0 / 0 qator</span>
+                </div>
+
+                <div class="progress" style="height: 22px;">
+                    <div id="bar"
+                         class="progress-bar progress-bar-striped progress-bar-animated"
+                         role="progressbar" style="width: 0%">0%</div>
+                </div>
+
+                <div id="stats" class="row text-center mt-3 small text-muted">
+                    <div class="col-4">
+                        <div class="fw-semibold text-body" id="stat-failed">0</div>
+                        <div>xatolik</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-semibold text-body" id="stat-in">0</div>
+                        <div>kirish token</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-semibold text-body" id="stat-out">0</div>
+                        <div>chiqish token</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <div id="error-box" class="alert alert-danger d-none"></div>
+
+        <div id="done-box" class="d-none">
+            <div class="alert alert-success">
+                Tahlil yakunlandi. Natija fayli tayyor.
+            </div>
+
+            <a id="download-link" class="btn btn-success btn-lg w-100 mb-4"
+               asp-action="Download" asp-route-id="@Model.Id">
+                Natijani yuklab olish (.xlsx)
+            </a>
+
+            <div class="card shadow-sm">
+                <div class="card-header fw-semibold">Kategoriyalar taqsimoti</div>
+                <div class="table-responsive">
+                    <table class="table table-sm mb-0">
+                        <thead>
+                            <tr>
+                                <th>Kategoriya</th>
+                                <th class="text-end" style="width: 100px;">Soni</th>
+                                <th class="text-end" style="width: 100px;">Ulushi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="summary-body"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <a asp-action="Index" class="btn btn-link mt-3 px-0">&larr; Yangi fayl yuklash</a>
+
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        (function () {
+            const jobId = document.getElementById('job').dataset.jobId;
+            const statusUrl = '@Url.Action("Status", "Home")/' + jobId;
+
+            const bar = document.getElementById('bar');
+            const label = document.getElementById('status-label');
+            const counter = document.getElementById('counter');
+            const errorBox = document.getElementById('error-box');
+            const doneBox = document.getElementById('done-box');
+            const summaryBody = document.getElementById('summary-body');
+
+            const labels = {
+                Pending: ['Kutilmoqda', 'bg-secondary'],
+                Running: ['Bajarilmoqda', 'bg-primary'],
+                Completed: ['Yakunlandi', 'bg-success'],
+                Failed: ['Xatolik', 'bg-danger']
+            };
+
+            function render(data) {
+                const [text, cls] = labels[data.status] || ['Noma’lum', 'bg-secondary'];
+                label.textContent = text;
+                label.className = 'badge ' + cls;
+
+                bar.style.width = data.progress + '%';
+                bar.textContent = data.progress + '%';
+                counter.textContent = data.processedRows + ' / ' + data.totalRows + ' qator';
+
+                document.getElementById('stat-failed').textContent = data.failedRows;
+                document.getElementById('stat-in').textContent = data.inputTokens.toLocaleString();
+                document.getElementById('stat-out').textContent = data.outputTokens.toLocaleString();
+
+                if (data.status === 'Failed') {
+                    bar.classList.remove('progress-bar-animated');
+                    bar.classList.add('bg-danger');
+                    errorBox.textContent = data.error || 'Nomaʼlum xatolik yuz berdi.';
+                    errorBox.classList.remove('d-none');
+                    return true;
+                }
+
+                if (data.status === 'Completed') {
+                    bar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+                    doneBox.classList.remove('d-none');
+
+                    summaryBody.innerHTML = '';
+                    (data.summary || []).forEach(function (item) {
+                        const tr = document.createElement('tr');
+
+                        const name = document.createElement('td');
+                        name.textContent = item.category;
+
+                        const count = document.createElement('td');
+                        count.className = 'text-end';
+                        count.textContent = item.count;
+
+                        const percent = document.createElement('td');
+                        percent.className = 'text-end';
+                        percent.textContent = item.percent.toFixed(2) + '%';
+
+                        tr.append(name, count, percent);
+                        summaryBody.appendChild(tr);
+                    });
+                    return true;
+                }
+
+                return false;
+            }
+
+            async function poll() {
+                try {
+                    const response = await fetch(statusUrl, { cache: 'no-store' });
+                    if (!response.ok) throw new Error('HTTP ' + response.status);
+
+                    if (render(await response.json())) return;   // tugadi — pollingni to'xtatamiz
+                } catch (e) {
+                    console.error(e);
+                }
+                setTimeout(poll, 2000);
+            }
+
+            poll();
+        })();
+    </script>
+}
