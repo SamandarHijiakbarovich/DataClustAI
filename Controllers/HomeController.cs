@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Linq;
 using ExcelAiCategorizer.Models;
 using ExcelAiCategorizer.Services;
 using Microsoft.AspNetCore.Mvc;
@@ -12,20 +13,23 @@ public sealed class HomeController : Controller
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
 
     private readonly IJobStore _store;
-    private readonly IJobQueue _queue;
+    private readonly IExcelService _excel;
+    private readonly IAiCategorizationService _ai;
     private readonly IFileStorage _storage;
     private readonly UploadSettings _uploadSettings;
     private readonly ILogger<HomeController> _logger;
 
     public HomeController(
         IJobStore store,
-        IJobQueue queue,
+        IExcelService excel,
+        IAiCategorizationService ai,
         IFileStorage storage,
         IOptions<UploadSettings> uploadSettings,
         ILogger<HomeController> logger)
     {
         _store = store;
-        _queue = queue;
+        _excel = excel;
+        _ai = ai;
         _storage = storage;
         _uploadSettings = uploadSettings.Value;
         _logger = logger;
@@ -34,7 +38,7 @@ public sealed class HomeController : Controller
     [HttpGet]
     public IActionResult Index() => View(new UploadViewModel());
 
-    // ------------------------------------------------------------- yuklash
+    // ------------------------------------------------------------- yuklash (sinxron)
 
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -46,34 +50,34 @@ public sealed class HomeController : Controller
         if (!ModelState.IsValid)
             return View(nameof(Index), model);
 
-        var jobId = Guid.NewGuid();
-
+        // Faylni oqib, darhol tahlil qilib natijani qaytaramiz (sinxron variant)
         await using var stream = model.File!.OpenReadStream();
-        var sourcePath = await _storage.SaveUploadAsync(jobId, stream, ct);
+        var table = _excel.Read(stream, string.IsNullOrWhiteSpace(model.ColumnName) ? null : model.ColumnName.Trim());
 
-        var job = new CategorizationJob
+        var options = new CategorizationOptions
         {
-            Id = jobId,
-            FileName = Path.GetFileName(model.File.FileName),
-            SourcePath = sourcePath,
-            RequestedColumn = string.IsNullOrWhiteSpace(model.ColumnName)
-                ? null
-                : model.ColumnName.Trim(),
-            Options = new CategorizationOptions
-            {
-                Categories = model.ParseCategories(),
-                AllowNewCategories = model.AllowNewCategories,
-                Context = model.Context?.Trim() ?? string.Empty
-            }
+            Categories = model.ParseCategories(),
+            AllowNewCategories = model.AllowNewCategories,
+            Context = model.Context?.Trim() ?? string.Empty,
+            ColumnName = table.TextColumnName
         };
 
-        _store.Add(job);
-        await _queue.EnqueueAsync(jobId, ct);
+        var batchSize = 25; // oddiy default — README dagi to'da hajmini moslashtirish mumkin
+        var batches = table.Rows.Chunk(Math.Max(1, batchSize));
 
-        _logger.LogInformation("Yangi vazifa navbatga qo'yildi: {JobId} ({File})",
-            jobId, job.FileName);
+        var results = new Dictionary<int, CategoryAssignment>();
 
-        return RedirectToAction(nameof(Progress), new { id = jobId });
+        foreach (var batch in batches)
+        {
+            var batchResult = await _ai.CategorizeBatchAsync(batch, options, ct);
+            foreach (var assignment in batchResult.Assignments)
+                results[assignment.RowNumber] = assignment;
+        }
+
+        var bytes = _excel.Write(table, results, out var summary);
+        var resultFileName = Path.GetFileNameWithoutExtension(model.File.FileName) + "-result.xlsx";
+
+        return File(bytes, XlsxContentType, resultFileName);
     }
 
     private void Validate(UploadViewModel model)
