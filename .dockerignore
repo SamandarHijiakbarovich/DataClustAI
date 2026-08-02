@@ -1,7 +1,10 @@
 bin/
 obj/
-publish_test/
+.vs/
+.git/
 App_Data/
 appsettings.Development.json
 *.user
-.vs/
+Dockerfile
+.dockerignore
+README.md

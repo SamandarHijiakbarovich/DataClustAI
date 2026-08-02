@@ -1,10 +1,30 @@
 using Anthropic;
 using ExcelAiCategorizer.Models;
 using ExcelAiCategorizer.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Options;
 
 var builder = WebApplication.CreateBuilder(args);
+
+// Render/konteyner muhitida PORT muhit o'zgaruvchisi orqali berilgan portni tinglaymiz.
+// Lokalda PORT bo'lmaydi — launchSettings o'z portini ishlatadi.
+var port = Environment.GetEnvironmentVariable("PORT");
+if (!string.IsNullOrWhiteSpace(port))
+{
+    builder.WebHost.UseUrls($"http://0.0.0.0:{port}");
+}
+
+// Render TLS'ni proxy'da tugatib, ilovaga HTTP forward qiladi.
+// Original sxemani (https) tanish uchun forwarded header'larni qabul qilamiz —
+// aks holda UseHttpsRedirection cheksiz redirect qilib qo'yadi.
+builder.Services.Configure<ForwardedHeadersOptions>(options =>
+{
+    options.ForwardedHeaders =
+        ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto;
+    options.KnownNetworks.Clear();
+    options.KnownProxies.Clear();
+});
 
 // ---------------------------------------------------------------- sozlamalar
 
@@ -67,6 +87,9 @@ builder.Services.AddControllersWithViews();
 var app = builder.Build();
 
 // ---------------------------------------------------------------- pipeline
+
+// Proxy header'larini boshqa middleware'lardan oldin qo'llash shart.
+app.UseForwardedHeaders();
 
 if (!app.Environment.IsDevelopment())
 {
