@@ -26,6 +26,17 @@
     --shadow-lg: 0 30px 60px -20px rgba(30, 27, 75, 0.28);
     --ring: rgba(109, 92, 245, 0.35);
     --input-bg: rgba(255, 255, 255, 0.7);
+
+    /* Bootstrap o'zgaruvchilarini o'z mavzuimizga bog'laymiz —
+       aks holda .card / .table ichidagi matn Bootstrap'ning qat'iy
+       och-kulrang rangini meros qilib, dark fonda ko'rinmay qoladi. */
+    --bs-body-color: var(--text);
+    --bs-body-bg: transparent;
+    --bs-emphasis-color: var(--text);
+    --bs-secondary-color: var(--text-muted);
+    --bs-border-color: var(--border);
+    --bs-card-color: var(--text);
+    --bs-heading-color: var(--text);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -205,6 +216,7 @@ header .navbar {
     border: 1px solid var(--border) !important;
     border-radius: 20px !important;
     box-shadow: var(--shadow) !important;
+    color: var(--text) !important;
     overflow: hidden;
 }
 
