@@ -49,10 +49,14 @@ public sealed class BatchCategorizationResponse
 }
 
 /// <summary>
-/// Taksonomiya aniqlash bosqichida AI qaytaradigan umumiy kategoriyalar ro'yxati.
+/// Tahlil boshidagi bitta chaqiruv javobi: ma'lumot xulosasi + umumiy kategoriyalar.
 /// </summary>
-public sealed class CategoryTaxonomyResponse
+public sealed class SampleAnalysisResponse
 {
+    /// <summary>Ma'lumot nima haqidaligi — 2-4 jumlalik oddiy tildagi xulosa.</summary>
+    [JsonPropertyName("overview")]
+    public string Overview { get; set; } = string.Empty;
+
     [JsonPropertyName("categories")]
     public List<string> Categories { get; set; } = [];
 }

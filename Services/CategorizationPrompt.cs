@@ -172,21 +172,21 @@ public static class CategorizationPrompt
     }
 
     // ================================================================
-    //  Taksonomiya aniqlash (1-bosqich) — kategoriyalar berilmaganda
+    //  Boshlang'ich tahlil (1-bosqich) — xulosa + kategoriyalar
     // ================================================================
 
     public const int TaxonomyMin = 4;
     public const int TaxonomyMax = 10;
     public const int TaxonomyIdeal = 7;
 
-    /// <summary>Namunadan umumiy kategoriyalar ro'yxatini so'rovchi ko'rsatma.</summary>
-    public static string BuildTaxonomySystem(CategorizationOptions options)
+    /// <summary>Namunadan xulosa + umumiy kategoriyalar so'rovchi ko'rsatma.</summary>
+    public static string BuildAnalysisSystem(CategorizationOptions options)
     {
         var prompt = new StringBuilder();
 
         prompt.AppendLine(
-            "Sen Excel ma'lumotlarini tahlil qiluvchi ekspertsan. Vazifang — quyidagi namuna " +
-            "qatorlarni o'qib, BUTUN ma'lumotni qamrab oladigan ixcham kategoriyalar ro'yxatini tuzish.");
+            "Sen Excel ma'lumotlarini tahlil qiluvchi ekspertsan. Quyidagi namuna qatorlarni o'qib, " +
+            "IKKI narsani qaytar: (1) ma'lumot haqida qisqa xulosa, (2) ixcham kategoriyalar ro'yxati.");
         prompt.AppendLine();
 
         if (!string.IsNullOrWhiteSpace(options.Context))
@@ -196,33 +196,43 @@ public static class CategorizationPrompt
             prompt.AppendLine($"Tahlil qilinayotgan ustun: {options.ColumnName}");
 
         prompt.AppendLine();
-        prompt.AppendLine("Talablar:");
-        prompt.AppendLine($"1. Jami {TaxonomyMin}–{TaxonomyMax} ta kategoriya bo'lsin (ideal — {TaxonomyIdeal} ta). Ko'paytirma.");
+        prompt.AppendLine("\"overview\" (xulosa) uchun talablar:");
+        prompt.AppendLine("- Oddiy, tushunarli o'zbek tilida, 2–4 ta jumla.");
+        prompt.AppendLine("- Ma'lumot NIMA haqidaligini, asosiy mavzular va (agar bo'lsa) umumiy kayfiyatni ayt.");
+        prompt.AppendLine("- Foydalanuvchiga do'stona murojaat qil, lekin faktlarga tayan — taxmin qilma.");
+        prompt.AppendLine("- Texnik atamalarsiz. Raqamlarni (taxminan nechta qator, qanday mavzular) kirit.");
+        prompt.AppendLine();
+        prompt.AppendLine("\"categories\" (kategoriyalar) uchun talablar:");
+        prompt.AppendLine($"1. Jami {TaxonomyMin}–{TaxonomyMax} ta bo'lsin (ideal — {TaxonomyIdeal} ta). Ko'paytirma.");
         prompt.AppendLine("2. Har biri qisqa (1–3 so'z), umumiy va bir-biridan aniq farqli bo'lsin.");
-        prompt.AppendLine("3. Sinonim yoki bir-birini takrorlaydigan nomlar BO'LMASIN. " +
+        prompt.AppendLine("3. Sinonim yoki takroriy nomlar BO'LMASIN. " +
             "Masalan \"Yetkazib berish narxi\" va \"Yetkazib berish xizmati\" — ikkisi o'rniga bitta \"Yetkazib berish\".");
         prompt.AppendLine("4. O'xshash mavzularni bitta umumiy guruhga birlashtir — mayda bo'laklarga bo'lma.");
-        prompt.AppendLine("5. Kategoriyalar butun ma'lumotni qamrasin, lekin ortiqcha maxsuslashtirmasin.");
         prompt.AppendLine();
         prompt.AppendLine("Javob FAQAT quyidagi shakldagi JSON bo'lsin, boshqa hech qanday matnsiz:");
-        prompt.AppendLine("""{"categories":["Kategoriya 1","Kategoriya 2","Kategoriya 3"]}""");
+        prompt.AppendLine("""{"overview":"...","categories":["Kategoriya 1","Kategoriya 2"]}""");
 
         return prompt.ToString();
     }
 
     /// <summary>Namuna qatorlar matni (raqamsiz — faqat mazmun kerak).</summary>
-    public static string BuildTaxonomyUser(IReadOnlyList<ExcelRowItem> sample)
+    public static string BuildAnalysisUser(IReadOnlyList<ExcelRowItem> sample)
     {
         var payload = JsonSerializer.Serialize(sample.Select(r => r.Text));
         return $"Quyidagi {sample.Count} ta namuna qatorni tahlil qilib, " +
-               $"umumiy kategoriyalar ro'yxatini aniqla:\n\n{payload}";
+               $"xulosa va umumiy kategoriyalar ro'yxatini qaytar:\n\n{payload}";
     }
 
-    /// <summary>Taksonomiya javobini majburlovchi JSON Schema.</summary>
-    public static Dictionary<string, JsonElement> BuildTaxonomySchema()
+    /// <summary>Boshlang'ich tahlil javobini majburlovchi JSON Schema.</summary>
+    public static Dictionary<string, JsonElement> BuildAnalysisSchema()
     {
         var rootProperties = new Dictionary<string, object>
         {
+            ["overview"] = new
+            {
+                type = "string",
+                description = "Ma'lumot haqida 2-4 jumlalik oddiy tildagi xulosa."
+            },
             ["categories"] = new Dictionary<string, object>
             {
                 ["type"] = "array",
@@ -237,7 +247,7 @@ public static class CategorizationPrompt
         {
             ["type"] = JsonSerializer.SerializeToElement("object"),
             ["properties"] = JsonSerializer.SerializeToElement(rootProperties),
-            ["required"] = JsonSerializer.SerializeToElement(new[] { "categories" }),
+            ["required"] = JsonSerializer.SerializeToElement(new[] { "overview", "categories" }),
             ["additionalProperties"] = JsonSerializer.SerializeToElement(false)
         };
     }

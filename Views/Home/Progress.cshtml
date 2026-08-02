@@ -15,7 +15,24 @@
             <p class="lead">Fayl: <strong>@Model.FileName</strong></p>
         </div>
 
-        <div class="card is-glow mb-4 anim-in d1">
+        <div id="overview-box" class="ai-msg anim-in d1 mb-4">
+            <div class="ai-avatar" aria-hidden="true">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a2 2 0 0 1 2 2c0 .74-.4 1.39-1 1.73V7h2a4 4 0 0 1 4 4h1a1 1 0 0 1 1 1v2a1 1 0 0 1-1 1h-1a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4H3a1 1 0 0 1-1-1v-2a1 1 0 0 1 1-1h1a4 4 0 0 1 4-4h2V5.73c-.6-.34-1-.99-1-1.73a2 2 0 0 1 2-2z" />
+                    <circle cx="9" cy="12" r="1" fill="currentColor" />
+                    <circle cx="15" cy="12" r="1" fill="currentColor" />
+                </svg>
+            </div>
+            <div class="ai-bubble">
+                <div class="ai-name">AI tahlilchi</div>
+                <div id="overview-text" class="ai-typing">
+                    <span></span><span></span><span></span>
+                </div>
+            </div>
+        </div>
+
+        <div class="card is-glow mb-4 anim-in d2">
             <div class="card-body p-4">
 
                 <div class="d-flex justify-content-between align-items-center mb-3">
@@ -109,6 +126,8 @@
             const errorBox = document.getElementById('error-box');
             const doneBox = document.getElementById('done-box');
             const summaryBody = document.getElementById('summary-body');
+            const overviewText = document.getElementById('overview-text');
+            let overviewShown = false;
 
             const labels = {
                 Pending: ['Kutilmoqda', 'bg-secondary'],
@@ -118,6 +137,14 @@
             };
 
             function render(data) {
+                // AI xulosasi tayyor bo'lishi bilan chat pufakchasiga yozamiz
+                if (!overviewShown && data.overview) {
+                    overviewText.classList.remove('ai-typing');
+                    overviewText.innerHTML = '';
+                    overviewText.textContent = data.overview;
+                    overviewShown = true;
+                }
+
                 const [text, cls] = labels[data.status] || ['Noma’lum', 'bg-secondary'];
                 label.textContent = text;
                 label.className = 'badge ' + cls;

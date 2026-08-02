@@ -127,7 +127,8 @@ public sealed class HomeController : Controller
             OutputTokens: job.OutputTokens,
             Error: job.ErrorMessage,
             IsDownloadReady: job.Status == JobStatus.Completed && job.ResultPath is not null,
-            Summary: job.Summary));
+            Summary: job.Summary,
+            Overview: job.Overview));
     }
 
     // ------------------------------------------------------------- yuklab olish

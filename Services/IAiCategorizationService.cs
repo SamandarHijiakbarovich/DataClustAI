@@ -8,8 +8,12 @@ public sealed record BatchResult(
     long InputTokens,
     long OutputTokens);
 
-/// <summary>Aniqlangan umumiy kategoriyalar ro'yxati va sarflangan tokenlar.</summary>
-public sealed record TaxonomyResult(
+/// <summary>
+/// Tahlil boshidagi bitta chaqiruv natijasi: ma'lumot xulosasi (chatbot uslubida),
+/// aniqlangan umumiy kategoriyalar va sarflangan tokenlar.
+/// </summary>
+public sealed record SampleAnalysisResult(
+    string Overview,
     IReadOnlyList<string> Categories,
     long InputTokens,
     long OutputTokens);
@@ -26,11 +30,12 @@ public interface IAiCategorizationService
         CancellationToken cancellationToken);
 
     /// <summary>
-    /// Kategoriyalar oldindan berilmaganida ishlatiladi: namuna qatorlarni tahlil qilib,
-    /// butun ma'lumotni qamrab oladigan ixcham va izchil kategoriyalar ro'yxatini aniqlaydi.
-    /// So'ng bu ro'yxat barcha to'dalarga qat'iy qo'llaniladi — natija bir xil bo'ladi.
+    /// Tahlil boshida namuna qatorlarni bitta chaqiruvda tahlil qiladi va qaytaradi:
+    /// (1) ma'lumot nima haqidaligi haqida qisqa xulosa (foydalanuvchiga chatbot uslubida),
+    /// (2) butun ma'lumotni qamrab oladigan ixcham va izchil kategoriyalar ro'yxati.
+    /// Kategoriyalar keyin barcha to'dalarga qat'iy qo'llaniladi — natija bir xil bo'ladi.
     /// </summary>
-    Task<TaxonomyResult> DiscoverCategoriesAsync(
+    Task<SampleAnalysisResult> AnalyzeSampleAsync(
         IReadOnlyList<ExcelRowItem> sample,
         CategorizationOptions options,
         CancellationToken cancellationToken);

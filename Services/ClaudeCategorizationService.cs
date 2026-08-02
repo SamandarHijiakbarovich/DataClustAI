@@ -57,7 +57,7 @@ public sealed class ClaudeCategorizationService : IAiCategorizationService
         }
     }
 
-    public async Task<TaxonomyResult> DiscoverCategoriesAsync(
+    public async Task<SampleAnalysisResult> AnalyzeSampleAsync(
         IReadOnlyList<ExcelRowItem> sample,
         CategorizationOptions options,
         CancellationToken cancellationToken)
@@ -68,16 +68,16 @@ public sealed class ClaudeCategorizationService : IAiCategorizationService
             MaxTokens = _settings.MaxTokens,
             System = new List<TextBlockParam>
             {
-                new() { Text = CategorizationPrompt.BuildTaxonomySystem(options) }
+                new() { Text = CategorizationPrompt.BuildAnalysisSystem(options) }
             },
             OutputConfig = new OutputConfig
             {
                 Effort = ParseEffort(_settings.Effort),
-                Format = new JsonOutputFormat { Schema = CategorizationPrompt.BuildTaxonomySchema() }
+                Format = new JsonOutputFormat { Schema = CategorizationPrompt.BuildAnalysisSchema() }
             },
             Messages =
             [
-                new() { Role = Role.User, Content = CategorizationPrompt.BuildTaxonomyUser(sample) }
+                new() { Role = Role.User, Content = CategorizationPrompt.BuildAnalysisUser(sample) }
             ]
         };
 
@@ -97,12 +97,13 @@ public sealed class ClaudeCategorizationService : IAiCategorizationService
                     .FirstOrDefault();
 
                 if (string.IsNullOrWhiteSpace(text))
-                    throw new AiTransientException("Kategoriya aniqlashda modeldan bo'sh javob keldi.");
+                    throw new AiTransientException("Boshlang'ich tahlilda modeldan bo'sh javob keldi.");
 
-                var parsed = JsonSerializer.Deserialize<CategoryTaxonomyResponse>(
+                var parsed = JsonSerializer.Deserialize<SampleAnalysisResponse>(
                     CategorizationPrompt.ExtractJson(text), JsonOptions);
 
-                return new TaxonomyResult(
+                return new SampleAnalysisResult(
+                    parsed?.Overview?.Trim() ?? string.Empty,
                     CategorizationPrompt.CleanTaxonomy(parsed?.Categories ?? []),
                     response.Usage.InputTokens,
                     response.Usage.OutputTokens);
@@ -111,7 +112,7 @@ public sealed class ClaudeCategorizationService : IAiCategorizationService
             {
                 var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
                 _logger.LogWarning(ex,
-                    "Kategoriya aniqlash muvaffaqiyatsiz ({Attempt}/{Max}). {Delay}s dan keyin qayta.",
+                    "Boshlang'ich tahlil muvaffaqiyatsiz ({Attempt}/{Max}). {Delay}s dan keyin qayta.",
                     attempt, _settings.MaxRetries, delay.TotalSeconds);
 
                 await Task.Delay(delay, cancellationToken);

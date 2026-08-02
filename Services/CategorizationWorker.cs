@@ -91,27 +91,32 @@ public sealed class CategorizationWorker : BackgroundService
         var options = job.Options with { ColumnName = table.TextColumnName };
         job.TotalRows = table.Rows.Count;
 
-        // --- 1.5. Kategoriyalar berilmagan bo'lsa: avval AI dan umumiy ro'yxatni aniqlaymiz ---
-        // Bu 2-bosqichli yondashuv. Aks holda har to'da o'zicha nom o'ylab topib,
-        // takroriy/sinonim kategoriyalar chiqadi. Bir marta ro'yxat aniqlanib, hamma
-        // to'daga qat'iy qo'llanilsa — natija izchil bo'ladi.
-        if (options.Categories.Count == 0 && table.Rows.Count > 0)
+        // --- 1.5. Boshlang'ich tahlil: ma'lumot xulosasi + (kerak bo'lsa) kategoriyalar ---
+        // Bitta AI chaqiruvi ikkalasini qaytaradi:
+        //   • "overview" — foydalanuvchiga chatbot uslubida ko'rsatiladigan qisqa xulosa;
+        //   • "categories" — kategoriyalar berilmagan bo'lsa, butun faylga qo'llaniladigan
+        //     yagona ro'yxat (aks holda har to'da o'zicha nom o'ylab topib, takror chiqadi).
+        if (table.Rows.Count > 0)
         {
             try
             {
                 var sample = SampleRows(table.Rows, DiscoverySampleSize);
-                var taxonomy = await _ai.DiscoverCategoriesAsync(sample, options, ct);
-                job.AddUsage(taxonomy.InputTokens, taxonomy.OutputTokens);
+                var analysis = await _ai.AnalyzeSampleAsync(sample, options, ct);
+                job.AddUsage(analysis.InputTokens, analysis.OutputTokens);
 
-                if (taxonomy.Categories.Count > 0)
+                if (!string.IsNullOrWhiteSpace(analysis.Overview))
+                    job.Overview = analysis.Overview;
+
+                // Kategoriyalarni faqat foydalanuvchi bermagan bo'lsa qo'llaymiz.
+                if (options.Categories.Count == 0 && analysis.Categories.Count > 0)
                 {
-                    var categories = taxonomy.Categories.ToList();
+                    var categories = analysis.Categories.ToList();
 
                     // "Boshqa" — hech qaysi guruhga tushmagan qatorlar uchun panoh.
                     if (!categories.Any(c => c.Equals("Boshqa", StringComparison.OrdinalIgnoreCase)))
                         categories.Add("Boshqa");
 
-                    // Qat'iy rejim: enum majburlanadi, barcha to'da bir xil ro'yxatdan foydalanadi.
+                    // Qat'iy rejim: barcha to'da bir xil ro'yxatdan foydalanadi.
                     options = options with { Categories = categories, AllowNewCategories = false };
 
                     _logger.LogInformation("{JobId}: AI {Count} ta kategoriya aniqladi: {Categories}",
@@ -120,9 +125,10 @@ public sealed class CategorizationWorker : BackgroundService
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                // Aniqlash bosqichi qulasa — eski xatti-harakatga (har to'da o'zi aniqlaydi) tushamiz.
+                // Tahlil bosqichi qulasa — xulosa bo'lmaydi, kategoriyalar bo'sh bo'lsa
+                // har to'da o'zi aniqlaydi (eski xatti-harakat). Vazifa to'xtamaydi.
                 _logger.LogWarning(ex,
-                    "{JobId}: kategoriya aniqlash bosqichi o'tkazib yuborildi.", job.Id);
+                    "{JobId}: boshlang'ich tahlil bosqichi o'tkazib yuborildi.", job.Id);
             }
         }
 

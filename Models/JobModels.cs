@@ -62,6 +62,12 @@ public sealed class CategorizationJob
 
     /// <summary>Kategoriyalar bo'yicha yakuniy taqsimot (tugaganda to'ldiriladi).</summary>
     public IReadOnlyList<CategorySummary> Summary { get; set; } = [];
+
+    /// <summary>
+    /// AI ning ma'lumot haqidagi qisqa xulosasi (chatbot uslubida ko'rsatiladi).
+    /// Tahlil boshida, kategoriyalashdan oldin to'ldiriladi.
+    /// </summary>
+    public string? Overview { get; set; }
 }
 
 public sealed record CategorySummary(string Category, int Count, double Percent);
@@ -78,4 +84,5 @@ public sealed record JobStatusDto(
     long OutputTokens,
     string? Error,
     bool IsDownloadReady,
-    IReadOnlyList<CategorySummary> Summary);
+    IReadOnlyList<CategorySummary> Summary,
+    string? Overview);
