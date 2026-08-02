@@ -6,37 +6,47 @@
 <div class="row justify-content-center">
     <div class="col-lg-8" data-job-id="@Model.Id" id="job">
 
-        <h1 class="h4 mb-1">Tahlil jarayoni</h1>
-        <p class="text-muted">
-            Fayl: <strong>@Model.FileName</strong>
-        </p>
+        <div class="hero anim-in" style="padding-top:0.5rem;">
+            <span class="hero-badge">
+                <span class="dot"></span>
+                Jonli jarayon
+            </span>
+            <h1 style="font-size:clamp(1.5rem,3.5vw,2.1rem);">Tahlil jarayoni</h1>
+            <p class="lead">Fayl: <strong>@Model.FileName</strong></p>
+        </div>
 
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
+        <div class="card is-glow mb-4 anim-in d1">
+            <div class="card-body p-4">
 
-                <div class="d-flex justify-content-between align-items-center mb-2">
+                <div class="d-flex justify-content-between align-items-center mb-3">
                     <span id="status-label" class="badge bg-secondary">Kutilmoqda</span>
-                    <span id="counter" class="small text-muted">0 / 0 qator</span>
+                    <span id="counter" class="small text-muted fw-semibold">0 / 0 qator</span>
                 </div>
 
-                <div class="progress" style="height: 22px;">
+                <div class="progress">
                     <div id="bar"
-                         class="progress-bar progress-bar-striped progress-bar-animated"
+                         class="progress-bar"
                          role="progressbar" style="width: 0%">0%</div>
                 </div>
 
-                <div id="stats" class="row text-center mt-3 small text-muted">
+                <div class="row g-2 text-center mt-3">
                     <div class="col-4">
-                        <div class="fw-semibold text-body" id="stat-failed">0</div>
-                        <div>xatolik</div>
+                        <div class="stat-tile">
+                            <div class="num" id="stat-failed">0</div>
+                            <div class="lbl">xatolik</div>
+                        </div>
                     </div>
                     <div class="col-4">
-                        <div class="fw-semibold text-body" id="stat-in">0</div>
-                        <div>kirish token</div>
+                        <div class="stat-tile">
+                            <div class="num" id="stat-in">0</div>
+                            <div class="lbl">kirish token</div>
+                        </div>
                     </div>
                     <div class="col-4">
-                        <div class="fw-semibold text-body" id="stat-out">0</div>
-                        <div>chiqish token</div>
+                        <div class="stat-tile">
+                            <div class="num" id="stat-out">0</div>
+                            <div class="lbl">chiqish token</div>
+                        </div>
                     </div>
                 </div>
 
@@ -45,25 +55,35 @@
 
         <div id="error-box" class="alert alert-danger d-none"></div>
 
-        <div id="done-box" class="d-none">
-            <div class="alert alert-success">
-                Tahlil yakunlandi. Natija fayli tayyor.
+        <div id="done-box" class="d-none anim-in">
+            <div class="alert alert-success d-flex align-items-center gap-2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                     stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                </svg>
+                <span>Tahlil yakunlandi. Natija fayli tayyor.</span>
             </div>
 
             <a id="download-link" class="btn btn-success btn-lg w-100 mb-4"
                asp-action="Download" asp-route-id="@Model.Id">
-                Natijani yuklab olish (.xlsx)
+                <span class="d-inline-flex align-items-center gap-2 justify-content-center">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                         stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3" />
+                    </svg>
+                    Natijani yuklab olish (.xlsx)
+                </span>
             </a>
 
-            <div class="card shadow-sm">
-                <div class="card-header fw-semibold">Kategoriyalar taqsimoti</div>
+            <div class="card">
+                <div class="card-header">Kategoriyalar taqsimoti</div>
                 <div class="table-responsive">
                     <table class="table table-sm mb-0">
                         <thead>
                             <tr>
                                 <th>Kategoriya</th>
-                                <th class="text-end" style="width: 100px;">Soni</th>
-                                <th class="text-end" style="width: 100px;">Ulushi</th>
+                                <th style="width: 34%;">Ulush</th>
+                                <th class="text-end" style="width: 90px;">Soni</th>
                             </tr>
                         </thead>
                         <tbody id="summary-body"></tbody>
@@ -111,7 +131,6 @@
                 document.getElementById('stat-out').textContent = data.outputTokens.toLocaleString();
 
                 if (data.status === 'Failed') {
-                    bar.classList.remove('progress-bar-animated');
                     bar.classList.add('bg-danger');
                     errorBox.textContent = data.error || 'Nomaʼlum xatolik yuz berdi.';
                     errorBox.classList.remove('d-none');
@@ -119,25 +138,30 @@
                 }
 
                 if (data.status === 'Completed') {
-                    bar.classList.remove('progress-bar-animated', 'progress-bar-striped');
                     doneBox.classList.remove('d-none');
 
+                    const items = (data.summary || []);
+                    const maxPct = items.reduce((m, i) => Math.max(m, i.percent), 0) || 1;
+
                     summaryBody.innerHTML = '';
-                    (data.summary || []).forEach(function (item) {
+                    items.forEach(function (item) {
                         const tr = document.createElement('tr');
 
                         const name = document.createElement('td');
+                        name.className = 'fw-semibold';
                         name.textContent = item.category;
 
+                        const barCell = document.createElement('td');
+                        const track = document.createElement('div');
+                        track.className = 'cat-bar';
+                        track.style.width = Math.max(4, (item.percent / maxPct) * 100) + '%';
+                        barCell.appendChild(track);
+
                         const count = document.createElement('td');
-                        count.className = 'text-end';
-                        count.textContent = item.count;
+                        count.className = 'text-end text-muted';
+                        count.textContent = item.count + ' (' + item.percent.toFixed(1) + '%)';
 
-                        const percent = document.createElement('td');
-                        percent.className = 'text-end';
-                        percent.textContent = item.percent.toFixed(2) + '%';
-
-                        tr.append(name, count, percent);
+                        tr.append(name, barCell, count);
                         summaryBody.appendChild(tr);
                     });
                     return true;

@@ -1,20 +1,34 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="uz">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6366f1" />
     <title>@ViewData["Title"] - Excel AI Kategorizator</title>
     <script type="importmap"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" />
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/ExcelAiCategorizer.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-sm navbar-light bg-white border-bottom box-shadow mb-4">
+        <nav class="navbar navbar-expand-sm mb-4">
             <div class="container">
-                <a class="navbar-brand fw-semibold" asp-controller="Home" asp-action="Index">
-                    Excel AI Kategorizator
+                <a class="brand navbar-brand" asp-controller="Home" asp-action="Index">
+                    <span class="brand-mark" aria-hidden="true">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z" />
+                        </svg>
+                    </span>
+                    <span class="d-flex flex-column lh-1">
+                        <span>Excel AI Kategorizator</span>
+                        <span class="brand-sub">Sun'iy intellekt tahlili</span>
+                    </span>
                 </a>
             </div>
         </nav>
@@ -26,9 +40,10 @@
         </main>
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            ASP.NET Core @Environment.Version.Major &middot; ClosedXML &middot; Anthropic Claude
+    <footer class="footer mt-5">
+        <div class="container d-flex flex-wrap justify-content-between gap-2">
+            <span>© @DateTime.Now.Year Excel AI Kategorizator</span>
+            <span>ASP.NET Core @Environment.Version.Major &middot; ClosedXML &middot; Gemini</span>
         </div>
     </footer>
 

@@ -1,31 +1,568 @@
+/* ============================================================
+   Excel AI Kategorizator — zamonaviy dizayn tizimi
+   Bootstrap ustidan yoziladi (layout'da bootstrap keyin site.css).
+   Light/dark avtomatik (prefers-color-scheme).
+   ============================================================ */
+
+:root {
+    /* Aksent gradient */
+    --grad: linear-gradient(135deg, #6366f1 0%, #8b5cf6 45%, #06b6d4 100%);
+    --grad-soft: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+    --accent: #6d5cf5;
+    --accent-2: #06b6d4;
+
+    /* Yorug' mavzu (standart) */
+    --bg: #f5f6fb;
+    --bg-2: #eef0f9;
+    --surface: rgba(255, 255, 255, 0.82);
+    --surface-solid: #ffffff;
+    --border: rgba(17, 24, 39, 0.08);
+    --border-strong: rgba(17, 24, 39, 0.14);
+    --text: #14181f;
+    --text-muted: #626b7a;
+    --text-faint: #8b93a1;
+    --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
+    --shadow: 0 10px 30px -12px rgba(30, 27, 75, 0.18), 0 4px 12px -6px rgba(30, 27, 75, 0.10);
+    --shadow-lg: 0 30px 60px -20px rgba(30, 27, 75, 0.28);
+    --ring: rgba(109, 92, 245, 0.35);
+    --input-bg: rgba(255, 255, 255, 0.7);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg: #080b14;
+        --bg-2: #0c1120;
+        --surface: rgba(22, 27, 44, 0.72);
+        --surface-solid: #141a2b;
+        --border: rgba(255, 255, 255, 0.08);
+        --border-strong: rgba(255, 255, 255, 0.16);
+        --text: #e8ebf2;
+        --text-muted: #9aa4b8;
+        --text-faint: #6b7488;
+        --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+        --shadow: 0 18px 40px -18px rgba(0, 0, 0, 0.6);
+        --shadow-lg: 0 40px 80px -24px rgba(0, 0, 0, 0.7);
+        --ring: rgba(139, 122, 255, 0.5);
+        --input-bg: rgba(12, 17, 32, 0.6);
+    }
+}
+
+/* ---------------------------------------------------------- asoslar */
+
 html {
-  font-size: 14px;
+    font-size: 15px;
+    position: relative;
+    min-height: 100%;
+    scroll-behavior: smooth;
 }
 
 @media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
-}
-
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
+    html { font-size: 16px; }
 }
 
 body {
-  margin-bottom: 60px;
+    margin: 0;
+    min-height: 100vh;
+    font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    color: var(--text);
+    background-color: var(--bg);
+    /* Aksentli "mesh" fon — yumshoq gradient dog'lar */
+    background-image:
+        radial-gradient(42rem 42rem at 12% -8%, rgba(99, 102, 241, 0.16), transparent 60%),
+        radial-gradient(38rem 38rem at 100% 0%, rgba(6, 182, 212, 0.14), transparent 55%),
+        radial-gradient(46rem 46rem at 50% 120%, rgba(139, 92, 246, 0.12), transparent 60%);
+    background-attachment: fixed;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
 }
 
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
+::selection {
+    background: rgba(109, 92, 245, 0.28);
 }
 
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+a { color: var(--accent); text-decoration: none; }
+a:hover { color: var(--accent-2); }
+
+code {
+    background: rgba(109, 92, 245, 0.12);
+    color: inherit;
+    padding: 0.1em 0.4em;
+    border-radius: 6px;
+    font-size: 0.86em;
+}
+
+/* ---------------------------------------------------------- header */
+
+header .navbar {
+    background: var(--surface) !important;
+    backdrop-filter: saturate(180%) blur(14px);
+    -webkit-backdrop-filter: saturate(180%) blur(14px);
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    box-shadow: var(--shadow-sm);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: var(--text) !important;
+    font-size: 1.05rem;
+}
+
+.brand:hover { color: var(--text) !important; }
+
+.brand-mark {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: var(--grad);
+    display: grid;
+    place-items: center;
+    color: #fff;
+    box-shadow: 0 6px 16px -6px rgba(99, 102, 241, 0.7);
+    flex: none;
+}
+
+.brand-mark svg { width: 19px; height: 19px; }
+
+.brand-sub {
+    font-size: 0.7rem;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+}
+
+/* ---------------------------------------------------------- hero */
+
+.hero {
+    text-align: center;
+    padding: 1.5rem 0 0.5rem;
+}
+
+.hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: var(--accent);
+    background: rgba(109, 92, 245, 0.10);
+    border: 1px solid rgba(109, 92, 245, 0.22);
+    margin-bottom: 1.1rem;
+}
+
+.hero-badge .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--accent-2);
+    box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.6);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0.55); }
+    70% { box-shadow: 0 0 0 8px rgba(6, 182, 212, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(6, 182, 212, 0); }
+}
+
+.hero h1 {
+    font-weight: 800;
+    letter-spacing: -0.025em;
+    line-height: 1.12;
+    font-size: clamp(1.7rem, 4vw, 2.5rem);
+    margin-bottom: 0.75rem;
+}
+
+.hero h1 .grad-text {
+    background: var(--grad);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.hero p.lead {
+    color: var(--text-muted);
+    max-width: 34rem;
+    margin: 0 auto;
+    font-size: 1.02rem;
+}
+
+/* ---------------------------------------------------------- kartalar */
+
+.card {
+    background: var(--surface) !important;
+    backdrop-filter: saturate(160%) blur(16px);
+    -webkit-backdrop-filter: saturate(160%) blur(16px);
+    border: 1px solid var(--border) !important;
+    border-radius: 20px !important;
+    box-shadow: var(--shadow) !important;
+    overflow: hidden;
+}
+
+.card.is-glow {
+    position: relative;
+}
+
+.card.is-glow::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    padding: 1px;
+    border-radius: inherit;
+    background: var(--grad);
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.card-header {
+    background: transparent !important;
+    border-bottom: 1px solid var(--border) !important;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    padding: 1rem 1.25rem;
+}
+
+.card.bg-light {
+    background: var(--bg-2) !important;
+}
+
+/* Maydon bo'limlari — ichki "field" bloklari */
+.field {
+    display: flex;
+    gap: 0.9rem;
+    padding: 1.15rem 0;
+    border-bottom: 1px solid var(--border);
+}
+.field:last-of-type { border-bottom: none; }
+
+.field-ico {
+    flex: none;
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    display: grid; place-items: center;
+    background: rgba(109, 92, 245, 0.10);
+    color: var(--accent);
+    border: 1px solid rgba(109, 92, 245, 0.16);
+}
+.field-ico svg { width: 20px; height: 20px; }
+.field-body { flex: 1; min-width: 0; }
+
+/* ---------------------------------------------------------- formalar */
+
+.form-label {
+    font-weight: 650;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+    letter-spacing: -0.01em;
+}
+
+.form-control, .form-select, textarea.form-control {
+    background: var(--input-bg) !important;
+    border: 1px solid var(--border-strong) !important;
+    border-radius: 12px !important;
+    color: var(--text) !important;
+    padding: 0.62rem 0.85rem;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+    box-shadow: none !important;
+}
+
+.form-control::placeholder { color: var(--text-faint); }
+
+.form-control:focus, .form-select:focus, textarea.form-control:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 4px var(--ring) !important;
+    background: var(--surface-solid) !important;
+    outline: none;
+}
+
+.form-text {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+    margin-top: 0.4rem;
+}
+
+.form-text ul { padding-left: 1.1rem; }
+
+/* Fayl input */
+.form-control[type="file"] {
+    padding: 0.4rem 0.5rem;
+}
+.form-control[type="file"]::file-selector-button {
+    background: var(--grad-soft);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.45rem 0.9rem;
+    margin-right: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: filter 0.15s ease, transform 0.15s ease;
+}
+.form-control[type="file"]::file-selector-button:hover {
+    filter: brightness(1.08);
+    transform: translateY(-1px);
+}
+
+/* Checkbox */
+.form-check-input {
+    width: 1.15em; height: 1.15em;
+    border: 1px solid var(--border-strong);
+    background-color: var(--input-bg);
+    cursor: pointer;
+}
+.form-check-input:checked {
+    background-color: var(--accent);
+    border-color: var(--accent);
+}
+.form-check-input:focus {
+    box-shadow: 0 0 0 4px var(--ring);
+    border-color: var(--accent);
+}
+.form-check-label { font-weight: 600; cursor: pointer; }
+
+/* ---------------------------------------------------------- tugmalar */
+
+.btn {
+    border-radius: 12px;
+    font-weight: 650;
+    letter-spacing: -0.01em;
+    transition: transform 0.15s ease, box-shadow 0.2s ease, filter 0.15s ease;
+}
+
+.btn-lg { padding: 0.8rem 1.4rem; font-size: 1.02rem; }
+
+.btn-primary {
+    background: var(--grad) !important;
+    background-size: 160% 160% !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 12px 26px -12px rgba(99, 102, 241, 0.75);
+    position: relative;
+    overflow: hidden;
+}
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 18px 34px -12px rgba(99, 102, 241, 0.85);
+    animation: gradShift 3s ease infinite;
+}
+.btn-primary:active { transform: translateY(0); }
+
+@keyframes gradShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
+/* Silliq "shine" o'tishi */
+.btn-primary::after {
+    content: "";
+    position: absolute;
+    top: 0; left: -120%;
+    width: 60%; height: 100%;
+    background: linear-gradient(120deg, transparent, rgba(255,255,255,0.35), transparent);
+    transform: skewX(-20deg);
+    transition: left 0.6s ease;
+}
+.btn-primary:hover::after { left: 140%; }
+
+.btn-success {
+    background: linear-gradient(135deg, #10b981, #059669) !important;
+    border: none !important;
+    color: #fff !important;
+    box-shadow: 0 12px 26px -12px rgba(16, 185, 129, 0.7);
+}
+.btn-success:hover { transform: translateY(-2px); filter: brightness(1.05); }
+
+.btn-link {
+    color: var(--text-muted) !important;
+    font-weight: 600;
+    text-decoration: none;
+}
+.btn-link:hover { color: var(--accent) !important; }
+
+/* ---------------------------------------------------------- badge / status */
+
+.badge {
+    font-weight: 650;
+    letter-spacing: 0.01em;
+    padding: 0.45em 0.8em;
+    border-radius: 999px;
+    font-size: 0.78rem;
+}
+.badge.bg-secondary { background: var(--text-faint) !important; }
+.badge.bg-primary { background: var(--grad-soft) !important; }
+.badge.bg-success { background: linear-gradient(135deg, #10b981, #059669) !important; }
+.badge.bg-danger  { background: linear-gradient(135deg, #f43f5e, #e11d48) !important; }
+
+/* ---------------------------------------------------------- progress */
+
+.progress {
+    background: var(--bg-2) !important;
+    border-radius: 999px !important;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    height: 24px !important;
+}
+
+.progress-bar {
+    background: var(--grad) !important;
+    background-size: 200% 100% !important;
+    font-weight: 700;
+    font-size: 0.78rem;
+    border-radius: 999px;
+    box-shadow: 0 0 18px rgba(109, 92, 245, 0.5);
+    transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+    animation: barFlow 2.5s linear infinite;
+}
+@keyframes barFlow {
+    0% { background-position: 0% 0; }
+    100% { background-position: 200% 0; }
+}
+.progress-bar.bg-danger {
+    background: linear-gradient(135deg, #f43f5e, #e11d48) !important;
+    box-shadow: 0 0 18px rgba(244, 63, 94, 0.5);
+    animation: none;
+}
+
+/* Statistika plitkalari */
+.stat-tile {
+    background: var(--input-bg);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 0.85rem 0.5rem;
+}
+.stat-tile .num {
+    font-size: 1.35rem;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    color: var(--text);
+    line-height: 1.1;
+}
+.stat-tile .lbl {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    margin-top: 0.15rem;
+}
+
+/* ---------------------------------------------------------- jadval */
+
+.table {
+    color: var(--text);
+    margin-bottom: 0;
+    --bs-table-bg: transparent;
+}
+.table > thead th {
+    border-bottom: 1px solid var(--border-strong);
+    color: var(--text-muted);
+    font-weight: 650;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+}
+.table > tbody td {
+    border-bottom: 1px solid var(--border);
+    vertical-align: middle;
+}
+.table > tbody tr:last-child td { border-bottom: none; }
+.table > tbody tr { transition: background 0.15s ease; }
+.table > tbody tr:hover { background: rgba(109, 92, 245, 0.06); }
+
+/* Kategoriya taqsimoti "bar" */
+.cat-bar {
+    height: 6px;
+    border-radius: 999px;
+    background: var(--grad-soft);
+    min-width: 4px;
+}
+
+/* ---------------------------------------------------------- alert */
+
+.alert {
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    backdrop-filter: blur(8px);
+}
+.alert-success {
+    background: rgba(16, 185, 129, 0.10) !important;
+    border-color: rgba(16, 185, 129, 0.3) !important;
+    color: #059669 !important;
+}
+.alert-danger {
+    background: rgba(244, 63, 94, 0.10) !important;
+    border-color: rgba(244, 63, 94, 0.3) !important;
+    color: #e11d48 !important;
+}
+@media (prefers-color-scheme: dark) {
+    .alert-success { color: #34d399 !important; }
+    .alert-danger { color: #fb7185 !important; }
+}
+
+/* ---------------------------------------------------------- "qanday ishlaydi" qadamlar */
+
+.steps { display: grid; gap: 0.75rem; }
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    font-size: 0.88rem;
+    color: var(--text-muted);
+}
+.step-num {
+    flex: none;
+    width: 24px; height: 24px;
+    border-radius: 8px;
+    background: rgba(109, 92, 245, 0.12);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 0.78rem;
+    display: grid; place-items: center;
+}
+
+/* ---------------------------------------------------------- footer */
+
+.footer {
+    border-top: 1px solid var(--border) !important;
+    color: var(--text-faint) !important;
+    font-size: 0.82rem;
+    padding: 1.25rem 0;
+    background: var(--surface);
+    backdrop-filter: blur(8px);
+}
+
+/* ---------------------------------------------------------- animatsiyalar */
+
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(14px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+.anim-in { animation: fadeUp 0.6s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-in.d1 { animation-delay: 0.08s; }
+.anim-in.d2 { animation-delay: 0.16s; }
+.anim-in.d3 { animation-delay: 0.24s; }
+
+@media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
+
+/* Fokus halqasi (default site.css'dan) */
+.btn:focus-visible, .form-control:focus-visible, .form-check-input:focus-visible {
+    outline: none;
 }

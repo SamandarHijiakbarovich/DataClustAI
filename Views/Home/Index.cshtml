@@ -6,9 +6,15 @@
 <div class="row justify-content-center">
     <div class="col-lg-8">
 
-        <div class="text-center mb-4">
-            <h1 class="h3 mb-2">Excel faylni sun'iy intellekt bilan kategoriyalash</h1>
-            <p class="text-muted mb-0">
+        <div class="hero anim-in">
+            <span class="hero-badge">
+                <span class="dot"></span>
+                Gemini bilan quvvatlangan
+            </span>
+            <h1>
+                Excel faylingizni <span class="grad-text">sun'iy intellekt</span> bilan kategoriyalang
+            </h1>
+            <p class="lead">
                 .xlsx faylni yuklang — har bir qator tahlil qilinib, kategoriyasi,
                 ishonch darajasi va izohi bilan yangi fayl qaytariladi.
             </p>
@@ -16,79 +22,133 @@
 
         <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
 
-        <form asp-action="Start" method="post" enctype="multipart/form-data" class="card shadow-sm">
-            <div class="card-body p-4">
+        <form asp-action="Start" method="post" enctype="multipart/form-data" class="card is-glow anim-in d1">
+            <div class="card-body p-4 p-md-4">
 
-                <div class="mb-4">
-                    <label asp-for="File" class="form-label fw-semibold"></label>
-                    <input asp-for="File" type="file" accept=".xlsx" class="form-control" />
-                    <div class="form-text">
-                        Birinchi qator ustun sarlavhalari deb qabul qilinadi. Maksimal 20 000 qator.
+                <!-- Fayl -->
+                <div class="field">
+                    <span class="field-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                            <path d="M14 2v6h6M8 13h8M8 17h8M8 9h2" />
+                        </svg>
+                    </span>
+                    <div class="field-body">
+                        <label asp-for="File" class="form-label"></label>
+                        <input asp-for="File" type="file" accept=".xlsx" class="form-control" />
+                        <div class="form-text">
+                            Birinchi qator ustun sarlavhalari deb qabul qilinadi. Maksimal 20 000 qator.
+                        </div>
+                        <span asp-validation-for="File" class="text-danger small"></span>
                     </div>
-                    <span asp-validation-for="File" class="text-danger small"></span>
                 </div>
 
-                <div class="mb-4">
-                    <label asp-for="ColumnName" class="form-label fw-semibold"></label>
-                    <input asp-for="ColumnName" class="form-control"
-                           placeholder="Masalan: Izoh   yoki   Qiziqish, Yo'nalish, Motivatsiya   yoki   *" />
-                    <div class="form-text">
-                        Bu yerga <strong>ustun nomini</strong> yozing (buyruq emas). Uch xil ishlatish mumkin:
-                        <ul class="mb-0 mt-1">
-                            <li><strong>Bo'sh qoldiring</strong> — matnga eng boy ustun avtomatik tanlanadi</li>
-                            <li><strong>Bir nechta nom</strong>, vergul bilan — ular birlashtirilib tahlil qilinadi</li>
-                            <li><strong><code>*</code></strong> yoki <code>barcha</code> — to'ldirilgan hamma ustun</li>
-                        </ul>
-                        <div class="mt-2 text-warning-emphasis">
-                            <strong>Diqqat:</strong> faqat tanlangan ustunlar AI ga yuboriladi.
-                            <code>*</code> yozsangiz, ism, telefon, manzil kabi shaxsiy ma'lumotlar ham
-                            yuboriladi — kerakli ustunlarnigina tanlang.
+                <!-- Ustun -->
+                <div class="field">
+                    <span class="field-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="3" width="18" height="18" rx="2" />
+                            <path d="M9 3v18M3 9h18" />
+                        </svg>
+                    </span>
+                    <div class="field-body">
+                        <label asp-for="ColumnName" class="form-label"></label>
+                        <input asp-for="ColumnName" class="form-control"
+                               placeholder="Masalan: Izoh   yoki   Qiziqish, Yo'nalish   yoki   *" />
+                        <div class="form-text">
+                            Bu yerga <strong>ustun nomini</strong> yozing (buyruq emas). Uch xil ishlatish mumkin:
+                            <ul class="mb-0 mt-1">
+                                <li><strong>Bo'sh qoldiring</strong> — matnga eng boy ustun avtomatik tanlanadi</li>
+                                <li><strong>Bir nechta nom</strong>, vergul bilan — ular birlashtirilib tahlil qilinadi</li>
+                                <li><strong><code>*</code></strong> yoki <code>barcha</code> — to'ldirilgan hamma ustun</li>
+                            </ul>
+                            <div class="mt-2 text-warning-emphasis">
+                                <strong>Diqqat:</strong> faqat tanlangan ustunlar AI ga yuboriladi.
+                                <code>*</code> yozsangiz, ism, telefon, manzil kabi shaxsiy ma'lumotlar ham
+                                yuboriladi — kerakli ustunlarnigina tanlang.
+                            </div>
+                        </div>
+                        <span asp-validation-for="ColumnName" class="text-danger small"></span>
+                    </div>
+                </div>
+
+                <!-- Kategoriyalar -->
+                <div class="field">
+                    <span class="field-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" />
+                            <circle cx="7" cy="7" r="1.5" />
+                        </svg>
+                    </span>
+                    <div class="field-body">
+                        <label asp-for="CategoriesRaw" class="form-label"></label>
+                        <textarea asp-for="CategoriesRaw" rows="4" class="form-control"
+                                  placeholder="Shikoyat&#10;Taklif&#10;Maqtov&#10;Texnik muammo"></textarea>
+                        <div class="form-text">
+                            Bo'sh qoldirsangiz, AI kategoriyalarni ma'lumotning o'zidan aniqlaydi.
+                        </div>
+                        <span asp-validation-for="CategoriesRaw" class="text-danger small"></span>
+
+                        <div class="form-check mt-3">
+                            <input asp-for="AllowNewCategories" class="form-check-input" />
+                            <label asp-for="AllowNewCategories" class="form-check-label"></label>
+                            <div class="form-text">
+                                Belgilanmasa, model faqat siz kiritgan kategoriyalardan foydalanadi
+                                (JSON sxemasidagi <code>enum</code> orqali majburlanadi).
+                            </div>
                         </div>
                     </div>
-                    <span asp-validation-for="ColumnName" class="text-danger small"></span>
                 </div>
 
-                <div class="mb-3">
-                    <label asp-for="CategoriesRaw" class="form-label fw-semibold"></label>
-                    <textarea asp-for="CategoriesRaw" rows="5" class="form-control"
-                              placeholder="Shikoyat&#10;Taklif&#10;Maqtov&#10;Texnik muammo"></textarea>
-                    <div class="form-text">
-                        Bo'sh qoldirsangiz, AI kategoriyalarni ma'lumotning o'zidan aniqlaydi.
-                    </div>
-                    <span asp-validation-for="CategoriesRaw" class="text-danger small"></span>
-                </div>
-
-                <div class="form-check mb-4">
-                    <input asp-for="AllowNewCategories" class="form-check-input" />
-                    <label asp-for="AllowNewCategories" class="form-check-label"></label>
-                    <div class="form-text">
-                        Belgilanmasa, model faqat siz kiritgan kategoriyalardan foydalanadi
-                        (JSON sxemasidagi <code>enum</code> orqali majburlanadi).
-                    </div>
-                </div>
-
-                <div class="mb-4">
-                    <label asp-for="Context" class="form-label fw-semibold"></label>
-                    <input asp-for="Context" class="form-control"
-                           placeholder="Masalan: onlayn do'kon mijozlarining izohlari" />
-                    <div class="form-text">
-                        Qisqa kontekst modelning aniqligini sezilarli oshiradi.
+                <!-- Kontekst -->
+                <div class="field">
+                    <span class="field-ico">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                             stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="M12 16v-4M12 8h.01" />
+                        </svg>
+                    </span>
+                    <div class="field-body">
+                        <label asp-for="Context" class="form-label"></label>
+                        <input asp-for="Context" class="form-control"
+                               placeholder="Masalan: onlayn do'kon mijozlarining izohlari" />
+                        <div class="form-text">
+                            Qisqa kontekst modelning aniqligini sezilarli oshiradi.
+                        </div>
                     </div>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-lg w-100">
-                    Tahlilni boshlash
+                <button type="submit" class="btn btn-primary btn-lg w-100 mt-4">
+                    <span class="d-inline-flex align-items-center gap-2 justify-content-center">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                             stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M5 3l14 9-14 9V3z" />
+                        </svg>
+                        Tahlilni boshlash
+                    </span>
                 </button>
             </div>
         </form>
 
-        <div class="card mt-4 border-0 bg-light">
-            <div class="card-body small text-muted">
-                <strong>Qanday ishlaydi:</strong>
-                fayl o'qiladi → qatorlar 25 tadan to'dalarga bo'linadi →
-                to'dalar parallel ravishda Claude modeliga yuboriladi →
-                javob JSON sxemasi bilan tekshiriladi →
-                natija yangi <code>.xlsx</code> faylga (natija + xulosa varaqlari) yoziladi.
+        <div class="card bg-light border-0 mt-4 anim-in d2">
+            <div class="card-body p-4">
+                <div class="fw-bold mb-3 d-flex align-items-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent)"
+                         stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z" />
+                    </svg>
+                    Qanday ishlaydi
+                </div>
+                <div class="steps">
+                    <div class="step"><span class="step-num">1</span><span>Fayl o'qiladi va sarlavha qatori avtomatik aniqlanadi</span></div>
+                    <div class="step"><span class="step-num">2</span><span>Qatorlar to'dalarga bo'linib, AI modeliga yuboriladi</span></div>
+                    <div class="step"><span class="step-num">3</span><span>Javob JSON sxemasi bo'yicha tekshiriladi va tozalanadi</span></div>
+                    <div class="step"><span class="step-num">4</span><span>Natija yangi <code>.xlsx</code> faylga (natija + xulosa varaqlari) yoziladi</span></div>
+                </div>
             </div>
         </div>
 
