@@ -171,6 +171,98 @@ public static class CategorizationPrompt
         return result;
     }
 
+    // ================================================================
+    //  Taksonomiya aniqlash (1-bosqich) — kategoriyalar berilmaganda
+    // ================================================================
+
+    public const int TaxonomyMin = 4;
+    public const int TaxonomyMax = 10;
+    public const int TaxonomyIdeal = 7;
+
+    /// <summary>Namunadan umumiy kategoriyalar ro'yxatini so'rovchi ko'rsatma.</summary>
+    public static string BuildTaxonomySystem(CategorizationOptions options)
+    {
+        var prompt = new StringBuilder();
+
+        prompt.AppendLine(
+            "Sen Excel ma'lumotlarini tahlil qiluvchi ekspertsan. Vazifang — quyidagi namuna " +
+            "qatorlarni o'qib, BUTUN ma'lumotni qamrab oladigan ixcham kategoriyalar ro'yxatini tuzish.");
+        prompt.AppendLine();
+
+        if (!string.IsNullOrWhiteSpace(options.Context))
+            prompt.AppendLine($"Ma'lumot konteksti: {options.Context}");
+
+        if (!string.IsNullOrWhiteSpace(options.ColumnName))
+            prompt.AppendLine($"Tahlil qilinayotgan ustun: {options.ColumnName}");
+
+        prompt.AppendLine();
+        prompt.AppendLine("Talablar:");
+        prompt.AppendLine($"1. Jami {TaxonomyMin}–{TaxonomyMax} ta kategoriya bo'lsin (ideal — {TaxonomyIdeal} ta). Ko'paytirma.");
+        prompt.AppendLine("2. Har biri qisqa (1–3 so'z), umumiy va bir-biridan aniq farqli bo'lsin.");
+        prompt.AppendLine("3. Sinonim yoki bir-birini takrorlaydigan nomlar BO'LMASIN. " +
+            "Masalan \"Yetkazib berish narxi\" va \"Yetkazib berish xizmati\" — ikkisi o'rniga bitta \"Yetkazib berish\".");
+        prompt.AppendLine("4. O'xshash mavzularni bitta umumiy guruhga birlashtir — mayda bo'laklarga bo'lma.");
+        prompt.AppendLine("5. Kategoriyalar butun ma'lumotni qamrasin, lekin ortiqcha maxsuslashtirmasin.");
+        prompt.AppendLine();
+        prompt.AppendLine("Javob FAQAT quyidagi shakldagi JSON bo'lsin, boshqa hech qanday matnsiz:");
+        prompt.AppendLine("""{"categories":["Kategoriya 1","Kategoriya 2","Kategoriya 3"]}""");
+
+        return prompt.ToString();
+    }
+
+    /// <summary>Namuna qatorlar matni (raqamsiz — faqat mazmun kerak).</summary>
+    public static string BuildTaxonomyUser(IReadOnlyList<ExcelRowItem> sample)
+    {
+        var payload = JsonSerializer.Serialize(sample.Select(r => r.Text));
+        return $"Quyidagi {sample.Count} ta namuna qatorni tahlil qilib, " +
+               $"umumiy kategoriyalar ro'yxatini aniqla:\n\n{payload}";
+    }
+
+    /// <summary>Taksonomiya javobini majburlovchi JSON Schema.</summary>
+    public static Dictionary<string, JsonElement> BuildTaxonomySchema()
+    {
+        var rootProperties = new Dictionary<string, object>
+        {
+            ["categories"] = new Dictionary<string, object>
+            {
+                ["type"] = "array",
+                ["description"] = "Umumiy kategoriyalar ro'yxati.",
+                ["minItems"] = TaxonomyMin,
+                ["maxItems"] = TaxonomyMax,
+                ["items"] = new { type = "string", description = "Qisqa kategoriya nomi (1-3 so'z)." }
+            }
+        };
+
+        return new Dictionary<string, JsonElement>
+        {
+            ["type"] = JsonSerializer.SerializeToElement("object"),
+            ["properties"] = JsonSerializer.SerializeToElement(rootProperties),
+            ["required"] = JsonSerializer.SerializeToElement(new[] { "categories" }),
+            ["additionalProperties"] = JsonSerializer.SerializeToElement(false)
+        };
+    }
+
+    /// <summary>
+    /// Aniqlangan ro'yxatni tozalaydi: bo'shlarni olib tashlaydi, takrorlarni
+    /// (registrga bog'liq bo'lmagan holda) birlashtiradi, sonini cheklaydi.
+    /// </summary>
+    public static IReadOnlyList<string> CleanTaxonomy(IEnumerable<string> categories)
+    {
+        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var result = new List<string>();
+
+        foreach (var raw in categories)
+        {
+            var name = raw?.Trim();
+            if (string.IsNullOrWhiteSpace(name)) continue;
+            if (name.Length > 40) name = name[..40].Trim();
+            if (seen.Add(name)) result.Add(name);
+            if (result.Count >= TaxonomyMax) break;
+        }
+
+        return result;
+    }
+
     /// <summary>
     /// Modeldan kelgan matndan JSON obyektini ajratib oladi.
     /// Kichik modellar javobni ```json ... ``` ichiga o'rashi yoki

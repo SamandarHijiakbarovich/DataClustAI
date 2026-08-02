@@ -47,3 +47,12 @@ public sealed class BatchCategorizationResponse
     [JsonPropertyName("items")]
     public List<CategoryAssignment> Items { get; set; } = [];
 }
+
+/// <summary>
+/// Taksonomiya aniqlash bosqichida AI qaytaradigan umumiy kategoriyalar ro'yxati.
+/// </summary>
+public sealed class CategoryTaxonomyResponse
+{
+    [JsonPropertyName("categories")]
+    public List<string> Categories { get; set; } = [];
+}

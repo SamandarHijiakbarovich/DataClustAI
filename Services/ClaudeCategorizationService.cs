@@ -57,6 +57,68 @@ public sealed class ClaudeCategorizationService : IAiCategorizationService
         }
     }
 
+    public async Task<TaxonomyResult> DiscoverCategoriesAsync(
+        IReadOnlyList<ExcelRowItem> sample,
+        CategorizationOptions options,
+        CancellationToken cancellationToken)
+    {
+        var parameters = new MessageCreateParams
+        {
+            Model = _settings.Model,
+            MaxTokens = _settings.MaxTokens,
+            System = new List<TextBlockParam>
+            {
+                new() { Text = CategorizationPrompt.BuildTaxonomySystem(options) }
+            },
+            OutputConfig = new OutputConfig
+            {
+                Effort = ParseEffort(_settings.Effort),
+                Format = new JsonOutputFormat { Schema = CategorizationPrompt.BuildTaxonomySchema() }
+            },
+            Messages =
+            [
+                new() { Role = Role.User, Content = CategorizationPrompt.BuildTaxonomyUser(sample) }
+            ]
+        };
+
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+                timeout.CancelAfter(TimeSpan.FromSeconds(_settings.RequestTimeoutSeconds));
+
+                var response = await _client.Messages.Create(parameters, cancellationToken: timeout.Token);
+
+                var text = response.Content
+                    .Select(block => block.Value)
+                    .OfType<TextBlock>()
+                    .Select(b => b.Text)
+                    .FirstOrDefault();
+
+                if (string.IsNullOrWhiteSpace(text))
+                    throw new AiTransientException("Kategoriya aniqlashda modeldan bo'sh javob keldi.");
+
+                var parsed = JsonSerializer.Deserialize<CategoryTaxonomyResponse>(
+                    CategorizationPrompt.ExtractJson(text), JsonOptions);
+
+                return new TaxonomyResult(
+                    CategorizationPrompt.CleanTaxonomy(parsed?.Categories ?? []),
+                    response.Usage.InputTokens,
+                    response.Usage.OutputTokens);
+            }
+            catch (Exception ex) when (IsTransient(ex) && attempt <= _settings.MaxRetries)
+            {
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt));
+                _logger.LogWarning(ex,
+                    "Kategoriya aniqlash muvaffaqiyatsiz ({Attempt}/{Max}). {Delay}s dan keyin qayta.",
+                    attempt, _settings.MaxRetries, delay.TotalSeconds);
+
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
+    }
+
     private MessageCreateParams BuildRequest(
         IReadOnlyList<ExcelRowItem> batch, CategorizationOptions options)
     {

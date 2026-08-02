@@ -11,6 +11,9 @@ namespace ExcelAiCategorizer.Services;
 /// </summary>
 public sealed class CategorizationWorker : BackgroundService
 {
+    /// <summary>Taksonomiya aniqlash uchun olinadigan namuna qatorlar soni.</summary>
+    private const int DiscoverySampleSize = 60;
+
     private readonly IJobQueue _queue;
     private readonly IJobStore _store;
     private readonly IExcelService _excel;
@@ -88,6 +91,41 @@ public sealed class CategorizationWorker : BackgroundService
         var options = job.Options with { ColumnName = table.TextColumnName };
         job.TotalRows = table.Rows.Count;
 
+        // --- 1.5. Kategoriyalar berilmagan bo'lsa: avval AI dan umumiy ro'yxatni aniqlaymiz ---
+        // Bu 2-bosqichli yondashuv. Aks holda har to'da o'zicha nom o'ylab topib,
+        // takroriy/sinonim kategoriyalar chiqadi. Bir marta ro'yxat aniqlanib, hamma
+        // to'daga qat'iy qo'llanilsa — natija izchil bo'ladi.
+        if (options.Categories.Count == 0 && table.Rows.Count > 0)
+        {
+            try
+            {
+                var sample = SampleRows(table.Rows, DiscoverySampleSize);
+                var taxonomy = await _ai.DiscoverCategoriesAsync(sample, options, ct);
+                job.AddUsage(taxonomy.InputTokens, taxonomy.OutputTokens);
+
+                if (taxonomy.Categories.Count > 0)
+                {
+                    var categories = taxonomy.Categories.ToList();
+
+                    // "Boshqa" — hech qaysi guruhga tushmagan qatorlar uchun panoh.
+                    if (!categories.Any(c => c.Equals("Boshqa", StringComparison.OrdinalIgnoreCase)))
+                        categories.Add("Boshqa");
+
+                    // Qat'iy rejim: enum majburlanadi, barcha to'da bir xil ro'yxatdan foydalanadi.
+                    options = options with { Categories = categories, AllowNewCategories = false };
+
+                    _logger.LogInformation("{JobId}: AI {Count} ta kategoriya aniqladi: {Categories}",
+                        job.Id, categories.Count, string.Join(", ", categories));
+                }
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                // Aniqlash bosqichi qulasa — eski xatti-harakatga (har to'da o'zi aniqlaydi) tushamiz.
+                _logger.LogWarning(ex,
+                    "{JobId}: kategoriya aniqlash bosqichi o'tkazib yuborildi.", job.Id);
+            }
+        }
+
         // --- 2. To'dalarga bo'lish ---
         var batches = table.Rows
             .Chunk(Math.Max(1, _settings.BatchSize))
@@ -151,5 +189,23 @@ public sealed class CategorizationWorker : BackgroundService
             "{JobId} tugadi: {Ok}/{Total} qator, {Seconds:F1}s, {In}+{Out} token.",
             job.Id, results.Count, job.TotalRows, stopwatch.Elapsed.TotalSeconds,
             job.InputTokens, job.OutputTokens);
+    }
+
+    /// <summary>
+    /// Butun ma'lumotni vakillik qiluvchi teng oraliqli namuna tanlaydi.
+    /// Qatorlar namunadan kam bo'lsa — hammasi qaytariladi.
+    /// </summary>
+    private static IReadOnlyList<ExcelRowItem> SampleRows(
+        IReadOnlyList<ExcelRowItem> rows, int max)
+    {
+        if (rows.Count <= max) return rows;
+
+        var step = (double)rows.Count / max;
+        var sample = new List<ExcelRowItem>(max);
+
+        for (var i = 0; i < max; i++)
+            sample.Add(rows[(int)(i * step)]);
+
+        return sample;
     }
 }

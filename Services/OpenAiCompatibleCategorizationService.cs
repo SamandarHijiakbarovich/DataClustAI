@@ -69,6 +69,119 @@ public sealed class OpenAiCompatibleCategorizationService : IAiCategorizationSer
         }
     }
 
+    public async Task<TaxonomyResult> DiscoverCategoriesAsync(
+        IReadOnlyList<ExcelRowItem> sample,
+        CategorizationOptions options,
+        CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                await _rateLimiter.WaitTurnAsync(cancellationToken);
+                return await SendDiscoveryAsync(sample, options, cancellationToken);
+            }
+            catch (Exception ex) when (IsTransient(ex) && attempt <= _settings.MaxRetries)
+            {
+                var delay = TimeSpan.FromSeconds(Math.Pow(2, attempt) * 2);
+                _logger.LogWarning(ex,
+                    "Kategoriya aniqlash so'rovi muvaffaqiyatsiz ({Attempt}/{Max}). {Delay}s dan keyin qayta.",
+                    attempt, _settings.MaxRetries, delay.TotalSeconds);
+
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
+    }
+
+    private async Task<TaxonomyResult> SendDiscoveryAsync(
+        IReadOnlyList<ExcelRowItem> sample,
+        CategorizationOptions options,
+        CancellationToken cancellationToken)
+    {
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(_settings.RequestTimeoutSeconds));
+
+        var client = _httpClientFactory.CreateClient(HttpClientName);
+        client.BaseAddress = new Uri(NormalizeBaseUrl(_settings.BaseUrl));
+
+        if (!string.IsNullOrWhiteSpace(_settings.ApiKey))
+            client.DefaultRequestHeaders.Authorization =
+                new AuthenticationHeaderValue("Bearer", _settings.ApiKey);
+
+        using var response = await client.PostAsJsonAsync(
+            "chat/completions", BuildDiscoveryBody(sample, options), JsonOptions, timeout.Token);
+
+        await EnsureSuccessAsync(response, timeout.Token);
+
+        var completion = await response.Content
+            .ReadFromJsonAsync<ChatCompletion>(JsonOptions, timeout.Token);
+
+        var content = completion?.Choices?.FirstOrDefault()?.Message?.Content;
+
+        if (string.IsNullOrWhiteSpace(content))
+            throw new AiTransientException("Kategoriya aniqlashda modeldan bo'sh javob keldi.");
+
+        CategoryTaxonomyResponse? parsed;
+        try
+        {
+            parsed = JsonSerializer.Deserialize<CategoryTaxonomyResponse>(
+                CategorizationPrompt.ExtractJson(content), JsonOptions);
+        }
+        catch (JsonException ex)
+        {
+            throw new AiTransientException(
+                $"Kategoriya javobini JSON sifatida o'qib bo'lmadi: {Preview(content)}", ex);
+        }
+
+        var categories = CategorizationPrompt.CleanTaxonomy(parsed?.Categories ?? []);
+
+        return new TaxonomyResult(
+            categories,
+            completion?.Usage?.PromptTokens ?? 0,
+            completion?.Usage?.CompletionTokens ?? 0);
+    }
+
+    private Dictionary<string, object?> BuildDiscoveryBody(
+        IReadOnlyList<ExcelRowItem> sample, CategorizationOptions options)
+    {
+        var body = new Dictionary<string, object?>
+        {
+            ["model"] = _settings.Model,
+            ["messages"] = new object[]
+            {
+                new { role = "system", content = CategorizationPrompt.BuildTaxonomySystem(options) },
+                new { role = "user",   content = CategorizationPrompt.BuildTaxonomyUser(sample) }
+            },
+            ["temperature"] = 0,
+            ["max_tokens"] = _settings.MaxTokens
+        };
+
+        switch (_settings.ResponseFormat?.ToLowerInvariant())
+        {
+            case "json_schema":
+                body["response_format"] = new
+                {
+                    type = "json_schema",
+                    json_schema = new
+                    {
+                        name = "taksonomiya",
+                        strict = true,
+                        schema = CategorizationPrompt.BuildTaxonomySchema()
+                    }
+                };
+                break;
+
+            case "none":
+                break;
+
+            default:
+                body["response_format"] = new { type = "json_object" };
+                break;
+        }
+
+        return body;
+    }
+
     private async Task<BatchResult> SendAsync(
         IReadOnlyList<ExcelRowItem> batch,
         CategorizationOptions options,

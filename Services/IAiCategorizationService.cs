@@ -8,6 +8,12 @@ public sealed record BatchResult(
     long InputTokens,
     long OutputTokens);
 
+/// <summary>Aniqlangan umumiy kategoriyalar ro'yxati va sarflangan tokenlar.</summary>
+public sealed record TaxonomyResult(
+    IReadOnlyList<string> Categories,
+    long InputTokens,
+    long OutputTokens);
+
 public interface IAiCategorizationService
 {
     /// <summary>
@@ -16,6 +22,16 @@ public interface IAiCategorizationService
     /// </summary>
     Task<BatchResult> CategorizeBatchAsync(
         IReadOnlyList<ExcelRowItem> batch,
+        CategorizationOptions options,
+        CancellationToken cancellationToken);
+
+    /// <summary>
+    /// Kategoriyalar oldindan berilmaganida ishlatiladi: namuna qatorlarni tahlil qilib,
+    /// butun ma'lumotni qamrab oladigan ixcham va izchil kategoriyalar ro'yxatini aniqlaydi.
+    /// So'ng bu ro'yxat barcha to'dalarga qat'iy qo'llaniladi — natija bir xil bo'ladi.
+    /// </summary>
+    Task<TaxonomyResult> DiscoverCategoriesAsync(
+        IReadOnlyList<ExcelRowItem> sample,
         CategorizationOptions options,
         CancellationToken cancellationToken);
 }
